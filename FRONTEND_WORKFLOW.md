@@ -1,46 +1,4 @@
-# KikoCloud Web Client
-
-A modern, high-performance web client built with **Next.js 16 (App Router)**, **BFF Architecture**, **Supabase Auth (Google OAuth 2.0)**, and **Direct MinIO S3 Binary Upload Engine**.
-
----
-
-## 🚀 Quick Start & Project Startup (项目启动指南)
-
-### 1. Prerequisites (环境要求)
-- **Node.js**: 18.x or 20.x+
-- **Package Manager**: `npm`, `pnpm`, or `yarn`
-
-### 2. Environment Variables Setup (环境变量配置)
-Create a `.env` or `.env.local` file in the project root:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://ghpyfaegcjxfpufilxbh.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_1Gb2J5xRDZe89zwTNk2lPQ_62rQtMc5
-GO_BACKEND_API_BASE_URL=https://olv5z7fky4.execute-api.ca-central-1.amazonaws.com
-```
-
-### 3. Install Dependencies (安装依赖)
-```bash
-npm install
-```
-
-### 4. Run Development Server (启动开发服务器)
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000/web](http://localhost:3000/web) in your browser to access the KikoCloud Web application.
-
-### 5. Production Build & Start (生产编译与启动)
-```bash
-# Compile optimized production bundle
-npm run build
-
-# Start production server
-npm run start
-```
-
----
+# KikoCloud Web Client - Architecture & Workflow Specification (BFF Architecture)
 
 ## 1. Architecture & Direct Upload Lifecycle
 
