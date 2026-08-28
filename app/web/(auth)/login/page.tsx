@@ -1,6 +1,5 @@
 import { GoogleLoginBtn } from '@/features/auth/components/GoogleLoginBtn';
-import { Cloud, ShieldCheck, Zap, HardDrive, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Cloud, ShieldCheck, Zap, HardDrive } from 'lucide-react';
 
 export default function LoginPage() {
   return (
@@ -45,17 +44,6 @@ export default function LoginPage() {
           {/* Login Actions */}
           <div className="space-y-4">
             <GoogleLoginBtn />
-
-            {/* Quick Demo Access Link */}
-            <div className="pt-2">
-              <Link
-                href="/web"
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-xs font-semibold text-indigo-300 hover:text-indigo-200 transition-all group"
-              >
-                <span>Enter Demo Mode (No Auth Needed)</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
           </div>
 
           {/* Footer Note */}

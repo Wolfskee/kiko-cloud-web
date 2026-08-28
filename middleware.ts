@@ -13,8 +13,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/web', request.url));
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo-project.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-anon-key';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -37,15 +37,12 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // If in demo mode (unconfigured credentials), allow access so UI preview works smoothly
-  const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('demo-project');
-
-  // Protect /web dashboard routes
+  // Protect /web dashboard routes strictly
   const isWebRoute = pathname === '/web' || pathname.startsWith('/web/');
   const isAuthRoute = pathname === '/web/login' || pathname.startsWith('/web/auth');
 
   if (isWebRoute && !isAuthRoute) {
-    if (!user && !isDemo) {
+    if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = '/web/login';
       return NextResponse.redirect(url);

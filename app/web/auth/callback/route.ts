@@ -6,7 +6,6 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/web';
 
-  // Ensure local development environment uses http:// instead of https:// for localhost
   let targetOrigin = origin;
   if (targetOrigin.startsWith('https://localhost') || targetOrigin.startsWith('https://127.0.0.1')) {
     targetOrigin = targetOrigin.replace('https://', 'http://');
@@ -15,10 +14,12 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host');
       const isLocalEnv = process.env.NODE_ENV === 'development';
 
+      // Perform pure HttpOnly cookie redirect (No localStorage exposure)
       if (isLocalEnv) {
         return NextResponse.redirect(`${targetOrigin}${next}`);
       } else if (forwardedHost) {
@@ -26,9 +27,10 @@ export async function GET(request: Request) {
       } else {
         return NextResponse.redirect(`${targetOrigin}${next}`);
       }
+    } else {
+      console.error('[Auth Callback Error]', error);
     }
   }
 
-  // Return the user to login page if code exchange fails
   return NextResponse.redirect(`${targetOrigin}/web/login?error=auth-callback-failed`);
 }
