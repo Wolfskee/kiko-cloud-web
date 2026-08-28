@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { fileId, objectKey } = body;
-    const { userId } = await getAuthInfo();
+    const { userId } = await getAuthInfo(request);
 
     if (!fileId) {
       return NextResponse.json({ error: 'Missing fileId' }, { status: 400 });
@@ -13,23 +13,26 @@ export async function POST(request: Request) {
 
     console.log(`[BFF Callback Step 9] Confirming fileId: ${fileId}, objectKey: ${objectKey || 'none'} for user: ${userId}`);
 
-    // Pass file_id in both query params and body for maximum Go router compatibility
     const path = `/api/v1/files/callback?file_id=${encodeURIComponent(fileId)}${objectKey ? `&object_key=${encodeURIComponent(objectKey)}` : ''}`;
 
-    const { data, error, status } = await backendFetch(path, {
-      method: 'POST',
-      body: JSON.stringify({
-        file_id: fileId,
-        fileId: fileId,
-        id: fileId,
-        object_key: objectKey || undefined,
-        objectKey: objectKey || undefined,
-        key: objectKey || undefined,
-        user_id: userId || undefined,
-        userId: userId || undefined,
-        status: 'ACTIVE',
-      }),
-    });
+    const { data, error, status } = await backendFetch(
+      path,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          file_id: fileId,
+          fileId: fileId,
+          id: fileId,
+          object_key: objectKey || undefined,
+          objectKey: objectKey || undefined,
+          key: objectKey || undefined,
+          user_id: userId || undefined,
+          userId: userId || undefined,
+          status: 'ACTIVE',
+        }),
+      },
+      request
+    );
 
     if (error) {
       console.error(`[BFF Callback Step 10 Failed] status ${status}:`, error);
