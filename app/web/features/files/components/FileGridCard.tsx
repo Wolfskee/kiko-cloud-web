@@ -1,23 +1,37 @@
 'use client';
 
-import { FileItem } from '../types';
+import { FileCategory, FileItem } from '../types';
 import { getFileIconInfo, formatBytes, formatDate } from '@/web/lib/utils';
 import { useFileDownload } from '../hooks/useFileDownload';
 import { useFileDelete } from '../hooks/useFileDelete';
-import { Download, Trash2, Eye, Link2, Loader2 } from 'lucide-react';
+import { useFilePermanentDelete } from '../hooks/useFilePermanentDelete';
+import { useFileRestore } from '../hooks/useFileRestore';
+import { Download, Trash2, Eye, Link2, Loader2, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 
 interface FileGridCardProps {
   file: FileItem;
+  category?: FileCategory;
   onSelectPreview: (file: FileItem) => void;
+  onRequestDelete?: (file: FileItem) => void;
+  onRequestPermanentDelete?: (file: FileItem) => void;
 }
 
-export function FileGridCard({ file, onSelectPreview }: FileGridCardProps) {
+export function FileGridCard({
+  file,
+  category,
+  onSelectPreview,
+  onRequestDelete,
+  onRequestPermanentDelete,
+}: FileGridCardProps) {
   const { icon: Icon, color } = getFileIconInfo(file.contentType, file.name);
   const { download, downloadingId } = useFileDownload();
   const deleteMutation = useFileDelete();
+  const permanentDeleteMutation = useFilePermanentDelete();
+  const restoreMutation = useFileRestore();
   const [copied, setCopied] = useState(false);
 
+  const isTrash = category === 'trash';
   const isDownloading = downloadingId === file.id;
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -29,6 +43,24 @@ export function FileGridCard({ file, onSelectPreview }: FileGridCardProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleTrashDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRequestPermanentDelete) {
+      onRequestPermanentDelete(file);
+    } else {
+      permanentDeleteMutation.mutate(file.id);
+    }
+  };
+
+  const handleSoftDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRequestDelete) {
+      onRequestDelete(file);
+    } else {
+      deleteMutation.mutate(file.id);
     }
   };
 
@@ -53,21 +85,41 @@ export function FileGridCard({ file, onSelectPreview }: FileGridCardProps) {
           >
             <Eye className="w-4 h-4" />
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              download(file.id, file.name);
-            }}
-            disabled={isDownloading}
-            title="Download"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors"
-          >
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-          </button>
+
+          {isTrash ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                restoreMutation.mutate(file.id);
+              }}
+              disabled={restoreMutation.isPending}
+              title="Restore File"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-700/60 transition-colors disabled:opacity-50"
+            >
+              {restoreMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+              ) : (
+                <RotateCcw className="w-4 h-4" />
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                download(file.id, file.name);
+              }}
+              disabled={isDownloading}
+              title="Download"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700/60 transition-colors disabled:opacity-50"
+            >
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
           <button
             onClick={handleCopy}
             title="Share"
@@ -75,16 +127,34 @@ export function FileGridCard({ file, onSelectPreview }: FileGridCardProps) {
           >
             <Link2 className="w-4 h-4" />
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteMutation.mutate(file.id);
-            }}
-            title="Delete"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+
+          {isTrash ? (
+            <button
+              onClick={handleTrashDeleteClick}
+              disabled={permanentDeleteMutation.isPending}
+              title="Delete Permanently"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition-colors disabled:opacity-50"
+            >
+              {permanentDeleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleSoftDeleteClick}
+              disabled={deleteMutation.isPending}
+              title="Delete"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition-colors disabled:opacity-50"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
