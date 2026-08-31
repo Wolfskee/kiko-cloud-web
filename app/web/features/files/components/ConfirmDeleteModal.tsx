@@ -2,7 +2,7 @@
 
 import { FileItem } from '../types';
 import { formatBytes, getFileIconInfo } from '@/web/lib/utils';
-import { AlertTriangle, X, Loader2, Trash2, RotateCcw, Info } from 'lucide-react';
+import { AlertTriangle, X, Loader2, Trash2, RotateCcw } from 'lucide-react';
 
 interface ConfirmDeleteModalProps {
   file: FileItem | null;
