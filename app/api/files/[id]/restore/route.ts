@@ -7,7 +7,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { userId, headers: authHeaders, token } = await getAuthInfo(request);
+    const { headers: authHeaders, token } = await getAuthInfo(request);
 
     if (!id) {
       return NextResponse.json({ error: 'Missing file id' }, { status: 400 });

@@ -20,16 +20,22 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
   const [copied, setCopied] = useState(false);
   const { download } = useFileDownload();
 
+  const [prevFileId, setPrevFileId] = useState<string | null>(null);
+
+  const currentFileId = file?.id ?? null;
+  if (currentFileId !== prevFileId) {
+    setPrevFileId(currentFileId);
+    setDownloadUrl(null);
+    setBlobUrl(null);
+    setTextContent(null);
+    setIsLoadingUrl(Boolean(file));
+  }
+
   useEffect(() => {
-    if (!file) {
-      setDownloadUrl(null);
-      setBlobUrl(null);
-      setTextContent(null);
-      return;
-    }
+    if (!file) return;
 
     let isMounted = true;
-    setIsLoadingUrl(true);
+    let createdUrl: string | null = null;
 
     requestDownloadUrl(file.id)
       .then(async (url) => {
@@ -38,7 +44,10 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
 
         const ext = file.name.split('.').pop()?.toLowerCase() || '';
         const isPdf = file.contentType.includes('pdf') || ext === 'pdf';
-        const isText = file.contentType.includes('text') || file.contentType.includes('json') || ['txt', 'md', 'json', 'js', 'ts', 'py'].includes(ext);
+        const isText =
+          file.contentType.includes('text') ||
+          file.contentType.includes('json') ||
+          ['txt', 'md', 'json', 'js', 'ts', 'py'].includes(ext);
 
         try {
           // Fetch raw Blob to override MinIO Content-Disposition: attachment for inline preview
@@ -51,8 +60,8 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
               const blob = await res.blob();
               // Force pdf mime type on blob if pdf
               const finalBlob = isPdf ? new Blob([blob], { type: 'application/pdf' }) : blob;
-              const localBlobUrl = URL.createObjectURL(finalBlob);
-              if (isMounted) setBlobUrl(localBlobUrl);
+              createdUrl = URL.createObjectURL(finalBlob);
+              if (isMounted) setBlobUrl(createdUrl);
             }
           }
         } catch (fetchErr) {
@@ -66,8 +75,8 @@ export function PreviewModal({ file, onClose }: PreviewModalProps) {
 
     return () => {
       isMounted = false;
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
       }
     };
   }, [file]);
