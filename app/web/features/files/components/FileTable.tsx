@@ -1,23 +1,38 @@
 'use client';
 
-import { FileItem } from '../types';
+import { FileCategory, FileItem } from '../types';
 import { getFileIconInfo, formatBytes, formatDate } from '@/web/lib/utils';
 import { useFileDownload } from '../hooks/useFileDownload';
 import { useFileDelete } from '../hooks/useFileDelete';
-import { Download, Trash2, Eye, Link2, MoreVertical, Loader2 } from 'lucide-react';
+import { useFilePermanentDelete } from '../hooks/useFilePermanentDelete';
+import { useFileRestore } from '../hooks/useFileRestore';
+import { Download, Trash2, Eye, Link2, MoreVertical, Loader2, RotateCcw } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 interface FileTableProps {
   files: FileItem[];
+  category?: FileCategory;
   onSelectPreview: (file: FileItem) => void;
+  onRequestDelete?: (file: FileItem) => void;
+  onRequestPermanentDelete?: (file: FileItem) => void;
 }
 
-export function FileTable({ files, onSelectPreview }: FileTableProps) {
+export function FileTable({
+  files,
+  category,
+  onSelectPreview,
+  onRequestDelete,
+  onRequestPermanentDelete,
+}: FileTableProps) {
   const { download, downloadingId } = useFileDownload();
   const deleteMutation = useFileDelete();
+  const permanentDeleteMutation = useFilePermanentDelete();
+  const restoreMutation = useFileRestore();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const isTrash = category === 'trash';
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
@@ -42,6 +57,22 @@ export function FileTable({ files, onSelectPreview }: FileTableProps) {
       setTimeout(() => setCopiedId(null), 2000);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleTrashDeleteClick = (file: FileItem) => {
+    if (onRequestPermanentDelete) {
+      onRequestPermanentDelete(file);
+    } else {
+      permanentDeleteMutation.mutate(file.id);
+    }
+  };
+
+  const handleSoftDeleteClick = (file: FileItem) => {
+    if (onRequestDelete) {
+      onRequestDelete(file);
+    } else {
+      deleteMutation.mutate(file.id);
     }
   };
 
@@ -110,18 +141,35 @@ export function FileTable({ files, onSelectPreview }: FileTableProps) {
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => download(file.id, file.name)}
-                      disabled={isDownloading}
-                      title="Download File"
-                      className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors disabled:opacity-50"
-                    >
-                      {isDownloading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                      ) : (
-                        <Download className="w-4 h-4" />
-                      )}
-                    </button>
+
+                    {isTrash ? (
+                      <button
+                        onClick={() => restoreMutation.mutate(file.id)}
+                        disabled={restoreMutation.isPending}
+                        title="Restore File"
+                        className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                      >
+                        {restoreMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                        ) : (
+                          <RotateCcw className="w-4 h-4" />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => download(file.id, file.name)}
+                        disabled={isDownloading}
+                        title="Download File"
+                        className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleCopyLink(file)}
                       title="Copy Share Link"
@@ -153,15 +201,29 @@ export function FileTable({ files, onSelectPreview }: FileTableProps) {
                           >
                             <Eye className="w-3.5 h-3.5 text-slate-400" /> Preview
                           </button>
-                          <button
-                            onClick={() => {
-                              download(file.id, file.name);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-4 py-2 flex items-center gap-2 hover:bg-slate-800 text-slate-300"
-                          >
-                            <Download className="w-3.5 h-3.5 text-slate-400" /> Download
-                          </button>
+
+                          {isTrash ? (
+                            <button
+                              onClick={() => {
+                                restoreMutation.mutate(file.id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 flex items-center gap-2 hover:bg-slate-800 text-emerald-400"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-emerald-400" /> Restore File
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                download(file.id, file.name);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 flex items-center gap-2 hover:bg-slate-800 text-slate-300"
+                            >
+                              <Download className="w-3.5 h-3.5 text-slate-400" /> Download
+                            </button>
+                          )}
+
                           <button
                             onClick={() => {
                               handleCopyLink(file);
@@ -172,15 +234,28 @@ export function FileTable({ files, onSelectPreview }: FileTableProps) {
                             <Link2 className="w-3.5 h-3.5 text-slate-400" /> Copy Link
                           </button>
                           <div className="my-1 border-t border-slate-800" />
-                          <button
-                            onClick={() => {
-                              deleteMutation.mutate(file.id);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-4 py-2 flex items-center gap-2 hover:bg-rose-950/40 text-rose-400"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete File
-                          </button>
+
+                          {isTrash ? (
+                            <button
+                              onClick={() => {
+                                handleTrashDeleteClick(file);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 flex items-center gap-2 hover:bg-rose-950/40 text-rose-400"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Permanently
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                handleSoftDeleteClick(file);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 flex items-center gap-2 hover:bg-rose-950/40 text-rose-400"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete File
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

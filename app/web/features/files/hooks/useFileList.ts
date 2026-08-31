@@ -14,7 +14,7 @@ export function useFileList(category: FileCategory = 'all', searchQuery: string 
 
   const filteredFiles = files.filter((file) => {
     // Search query matching
-    const matchesSearch = searchQuery.trim() === '' || 
+    const matchesSearch = searchQuery.trim() === '' ||
       file.name.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
@@ -25,6 +25,9 @@ export function useFileList(category: FileCategory = 'all', searchQuery: string 
       const isRecent = (now - created) < (86400000 * 7); // within 7 days
       return isRecent && file.status !== 'deleted';
     }
+    console.log("________________DEBUG____________________")
+    console.log("file:", file, "file status:", file.status)
+    console.log("________________DEBUG____________________")
 
     if (category === 'trash') {
       return file.status === 'deleted';

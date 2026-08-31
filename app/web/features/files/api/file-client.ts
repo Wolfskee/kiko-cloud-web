@@ -94,3 +94,28 @@ export async function deleteFile(fileId: string): Promise<void> {
     throw new Error('Failed to delete file');
   }
 }
+
+export async function permanentDeleteFile(fileId: string): Promise<void> {
+  const authHeaders = await getBrowserAuthHeader();
+  const res = await fetch(`/api/files/${fileId}/permanent`, {
+    method: 'DELETE',
+    headers: { ...authHeaders },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to permanently delete file');
+  }
+}
+
+export async function restoreFile(fileId: string): Promise<void> {
+  const authHeaders = await getBrowserAuthHeader();
+  const res = await fetch(`/api/files/${fileId}/restore`, {
+    method: 'POST',
+    headers: { ...authHeaders },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to restore file');
+  }
+}
+
