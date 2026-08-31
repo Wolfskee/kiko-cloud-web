@@ -71,7 +71,7 @@ export function DuplicateConflictModal({
             className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
           >
             <Copy className="w-4 h-4" />
-            <span>Rename & Upload as "{renamedFile.name}"</span>
+            <span>{`Rename & Upload as "${renamedFile.name}"`}</span>
           </button>
 
           {/* Skip / Cancel */}

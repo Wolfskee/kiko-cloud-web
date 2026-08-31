@@ -17,9 +17,8 @@ export async function DELETE(
     const rawToken = token || (incomingAuth.startsWith('Bearer ') ? incomingAuth.substring(7) : incomingAuth);
     const bearerAuth = rawToken ? `Bearer ${rawToken}` : authHeaders.Authorization || '';
 
-    // Standard HTTP DELETE without body matching API Gateway & Go Lambda spec
     let res = await backendFetch(
-      `/api/v1/files/${id}`,
+      `/api/v1/files/${id}/permanent`,
       {
         method: 'DELETE',
         headers: {
@@ -29,10 +28,9 @@ export async function DELETE(
       request
     );
 
-    // Fallback: Retry with raw token if 401
     if (res.status === 401 && rawToken) {
       res = await backendFetch(
-        `/api/v1/files/${id}`,
+        `/api/v1/files/${id}/permanent`,
         {
           method: 'DELETE',
           headers: {
@@ -49,7 +47,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, data: res.data });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Delete file error';
+    const message = err instanceof Error ? err.message : 'Permanent delete file error';
     return NextResponse.json({ error: message, success: false }, { status: 500 });
   }
 }

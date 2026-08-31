@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useFileList } from '../hooks/useFileList';
+import { useFileDelete } from '../hooks/useFileDelete';
+import { useFilePermanentDelete } from '../hooks/useFilePermanentDelete';
 import { FileCategory, FileItem, FileViewMode } from '../types';
 import { FileTable } from './FileTable';
 import { FileGridCard } from './FileGridCard';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { LayoutGrid, List, Search, FolderOpen, Loader2, Sparkles } from 'lucide-react';
 
 interface FileExplorerProps {
@@ -22,8 +25,32 @@ export function FileExplorer({
 }: FileExplorerProps) {
   const [viewMode, setViewMode] = useState<FileViewMode>('table');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<{
+    file: FileItem;
+    mode: 'soft' | 'permanent';
+  } | null>(null);
 
   const { files, isLoading, isError } = useFileList(category, searchQuery);
+  const deleteMutation = useFileDelete();
+  const permanentDeleteMutation = useFilePermanentDelete();
+
+  const handleConfirmDelete = () => {
+    if (!confirmDeleteTarget) return;
+
+    if (confirmDeleteTarget.mode === 'soft') {
+      deleteMutation.mutate(confirmDeleteTarget.file.id, {
+        onSettled: () => {
+          setConfirmDeleteTarget(null);
+        },
+      });
+    } else {
+      permanentDeleteMutation.mutate(confirmDeleteTarget.file.id, {
+        onSettled: () => {
+          setConfirmDeleteTarget(null);
+        },
+      });
+    }
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -110,14 +137,36 @@ export function FileExplorer({
           </div>
         </div>
       ) : viewMode === 'table' ? (
-        <FileTable files={files} onSelectPreview={onSelectPreview} />
+        <FileTable
+          files={files}
+          category={category}
+          onSelectPreview={onSelectPreview}
+          onRequestDelete={(file) => setConfirmDeleteTarget({ file, mode: 'soft' })}
+          onRequestPermanentDelete={(file) => setConfirmDeleteTarget({ file, mode: 'permanent' })}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {files.map((file) => (
-            <FileGridCard key={file.id} file={file} onSelectPreview={onSelectPreview} />
+            <FileGridCard
+              key={file.id}
+              file={file}
+              category={category}
+              onSelectPreview={onSelectPreview}
+              onRequestDelete={(file) => setConfirmDeleteTarget({ file, mode: 'soft' })}
+              onRequestPermanentDelete={(file) => setConfirmDeleteTarget({ file, mode: 'permanent' })}
+            />
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal (Handles both Soft & Permanent delete) */}
+      <ConfirmDeleteModal
+        file={confirmDeleteTarget?.file || null}
+        mode={confirmDeleteTarget?.mode || 'permanent'}
+        isPending={deleteMutation.isPending || permanentDeleteMutation.isPending}
+        onClose={() => setConfirmDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
